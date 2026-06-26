@@ -211,12 +211,17 @@ def draw_hold(piece):
                                      (370 + x * BLOCK, 200 + y * BLOCK, BLOCK - 1, BLOCK - 1))
 
 
-def mode_select():
+def mode_select(high_scores):
     selected = None
     while selected is None:
         screen.fill(DARK)
         title = font_big.render("TETRIS+", True, (0, 240, 240))
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
+        hs_texts = {
+            'endless': f"Best: {high_scores['endless']}pts",
+            'sprint': f"Best: {high_scores['sprint']}s" if high_scores['sprint'] != 999999 else "Best: --",
+            'blitz': f"Best: {high_scores['blitz']}pts",
+        }
 
         modes = [
             ("ENDLESS", "classic tetris, no limit", (0, 240, 240)),
@@ -232,6 +237,9 @@ def mode_select():
             screen.blit(label, (170, y + 10))
             sub = font.render(desc, True, (180, 180, 180))
             screen.blit(sub, (170, y + 48))
+            hs_keys = ['endless', 'sprint', 'blitz']
+            hs = font.render(hs_texts[hs_keys[i]], True, (255, 220, 100))
+            screen.blit(hs, (430, y + 48))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -248,7 +256,7 @@ def mode_select():
         clock.tick(60)
     return selected
 
-def main(mode='endless'):
+def main(mode='endless', high_scores=None):
     board = [[None] * COLS for _ in range(ROWS)]
     piece = new_piece()
     next_piece = new_piece()
@@ -260,6 +268,7 @@ def main(mode='endless'):
 
     running = True
     game_over = False
+    hs_saved = False
     combo = 0
     sprint_done = False
     blitz_time = 120000
@@ -377,6 +386,18 @@ def main(mode='endless'):
 
         pygame.display.flip()
 
+        if game_over and not hs_saved:
+            hs_saved = True
+            if mode == 'endless' and score > high_scores['endless']:
+                high_scores['endless'] == score
+            elif mode == 'blitz' and score > high_scores['blitz']:
+                high_scores['blitz'] = score
+            elif mode == 'sprint' and sprint_done:
+                secs = elapsed // 1000
+                if secs < high_scores['sprint']:
+                    high_scores['sprint'] = secs
+
+high_scores = {'endless': 0, 'sprint': 999999, 'blitz': 0}
 while True:
-    mode = mode_select()
-    main(mode)
+    mode = mode_select(high_scores)
+    main(mode, high_scores)
