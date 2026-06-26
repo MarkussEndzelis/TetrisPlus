@@ -136,16 +136,17 @@ def draw_next(piece):
                                  (370 + x * BLOCK, 60 + y * BLOCK, BLOCK - 1, BLOCK - 1))
                 
 def draw_ui(score, level, lines):
-    screen.blit(font.render(f"SCORE", True, WHITE), (370, 180))
-    screen.blit(font_big.render(str(score), True, WHITE), (370, 200))
-    screen.blit(font.render(f"LEVEL", True, WHITE), (370, 260))
-    screen.blit(font_big.render(str(level), True, WHITE), (370, 280))
-    screen.blit(font.render(f"LINES", True, WHITE), (370, 340))
-    screen.blit(font_big.render(str(lines), True, WHITE), (370, 360))
-    screen.blit(font.render("← → move", True, (180, 180, 180)), (370, 430))
-    screen.blit(font.render("↑ rotate", True, (180, 180, 180)), (370, 455))
-    screen.blit(font.render("↓ soft drop", True, (180, 180, 180)), (370, 480))
-    screen.blit(font.render("SPACE hard drop", True, (180, 180, 180)), (370, 505))
+    screen.blit(font.render(f"SCORE", True, WHITE), (370, 220))
+    screen.blit(font_big.render(str(score), True, WHITE), (370, 240))
+    screen.blit(font.render(f"LEVEL", True, WHITE), (370, 300))
+    screen.blit(font_big.render(str(level), True, WHITE), (370, 320))
+    screen.blit(font.render(f"LINES", True, WHITE), (370, 370))
+    screen.blit(font_big.render(str(lines), True, WHITE), (370, 390))
+    screen.blit(font.render("← → move", True, (180, 180, 180)), (370, 450))
+    screen.blit(font.render("↑ rotate", True, (180, 180, 180)), (370, 472))
+    screen.blit(font.render("↓ soft drop", True, (180, 180, 180)), (370, 494))
+    screen.blit(font.render("SPACE hard drop", True, (180, 180, 180)), (370, 516))
+    screen.blit(font.render("C - hold", True, (180, 180, 180)), (370, 538))
 
 def draw_mode_ui(mode, lines_total, elapsed, blitz_time):
     if mode == 'sprint':
@@ -198,13 +199,13 @@ def activate_special(board, piece):
 
 def draw_hold(piece):
     label = font.render("HOLD", True, WHITE)
-    screen.blit(label, (370, 420))
+    screen.blit(label, (370, 150))
     if piece:
         for y, row in enumerate(piece['shape']):
             for x, cell in enumerate(row):
                 if cell:
                     pygame.draw.rect(screen, piece['color'],
-                                     (370 + x * BLOCK, 450 + y * BLOCK, BLOCK - 1, BLOCK - 1))
+                                     (370 + x * BLOCK, 175 + y * BLOCK, BLOCK - 1, BLOCK - 1))
 
 
 def mode_select():
