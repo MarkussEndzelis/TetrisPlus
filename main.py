@@ -29,6 +29,12 @@ PIECES = [
     [[0,0,1],[1,1,1]],
 ]
 
+SPECIAL_PIECES = [
+    {'type': 'bomb', 'shape': [[1]], 'color': (255, 80, 80)},
+    {'type': 'lightning', 'shape': [[1]], 'color': (255, 255, 0)},
+    {'type': 'crystal', 'shape': [[1]], 'color': (0, 200, 255)},
+]
+
 BLOCK = 30
 COLS = 10
 ROWS = 20
@@ -43,10 +49,20 @@ font = pygame.font.SysFont("Arial", 20, bold=True)
 font_big = pygame.font.SysFont("Arial", 36, bold=True)
 
 def new_piece():
+    if random.randint(1, 8) == 1:
+        sp = random.choice(SPECIAL_PIECES)
+        return {
+            'shape': sp['shape'],
+            'color': sp['color'],
+            'type': sp['type'],
+            'x': COLS // 2,
+            'y': 0
+        }
     idx = random.randint(0, len(PIECES) - 1)
     return {
         'shape': PIECES[idx],
         'color': COLORS[idx],
+        'type': 'normal',
         'x': COLS // 2 - len(PIECES[idx][0]) // 2,
         'y': 0
     }
@@ -131,6 +147,45 @@ def draw_ui(score, level, lines):
     screen.blit(font.render("↓ soft drop", True, GRAY), (370, 480))
     screen.blit(font.render("SPACE hard drop", True, GRAY), (370, 505))
 
+def draw_special_hint(piece):
+    if piece['type'] != 'normal':
+        hints = {
+            'bomb': ('BOMB', '3x3 explosion', (255, 80, 80)),
+            'lightning': ('LIGHTNING', 'clears column', (255, 255, 0)),
+            'crystal': ('CRYSTAL', 'clears row', (0, 200, 255)),
+        }
+        name, desc, color = hints[piece['type']]
+        label = font.render(f"SPECIAL: {name}", True, color)
+        sub = font.render(desc, True, GRAY)
+        screen.blit(label, (370, 550))
+        screen.blit(sub, (370, 575))
+
+def explode_bomb(board, px, py):
+    for dy in range(-1, 2):
+        for dx in range(-1, 2):
+            ny, nx = py + dy, px + dx
+            if 0 <= ny < ROWS and 0 <= nx < COLS:
+                board[ny][nx] = None
+
+def explode_lightning(board, px):
+    for y in range(ROWS):
+        board[y][px] = None
+
+def explode_crystal(board, py):
+    for x in range(COLS):
+        board[py][x] = None
+
+def activate_special(board, piece):
+    px = piece['x']
+    py = piece['y']
+    t = piece['type']
+    if t == 'bomb':
+        explode_bomb(board, px, py)
+    elif t == 'lightning':
+        explode_lightning(board, px)
+    elif t == 'crystal':
+        explode_crystal(board, py)
+
 def main():
     board = [[None] * COLS for _ in range(ROWS)]
     piece = new_piece()
@@ -186,7 +241,10 @@ def main():
             if valid(board, piece, oy=1):
                 piece['y'] += 1
             else:
-                place(board, piece)
+                if piece['type'] == 'normal':
+                    place(board, piece)
+                else:
+                    activate_special(board, piece)
                 cleared = clear_lines(board)
                 lines_total += cleared
                 score += [0, 100, 300, 500, 800][cleared] * level
@@ -201,13 +259,24 @@ def main():
         draw_ghost(board, piece)
         draw_piece(piece)
         draw_next(next_piece)
+        draw_special_hint(next_piece)
         draw_ui(score, level, lines_total)
 
         if game_over:
-            over = font_big.render("GAME OVER", True, (240, 0, 0))
-            screen.blit(over, (WIDTH // 2 - over.get_width() // 2, HEIGHT // 2 - 20))
-            sub = font.render("Press R to restart", True, WHITE)
-            screen.blit(sub, (WIDTH // 2 - sub.get_width() // 2, HEIGHT // 2 + 30))
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 160))
+            screen.blit(overlay, (0, 0))
+
+            over = font_big.render("GAME OVER", True, (240, 60, 60))
+            shadow = font_big.render("GAME OVER", True, (0, 0, 0))
+            screen.blit(shadow, (WIDTH // 2 - over.get_width() // 2 + 2, HEIGHT // 2 - 52))
+            screen.blit(over, (WIDTH // 2 - over.get_width() // 2, HEIGHT // 2 - 54))
+
+            score_text = font.render(f"Score: {score} | Lines: {lines_total} | Level: {level}", True, WHITE)
+            screen.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 2))
+
+            sub = font.render("Press R to restart", True, (180, 180, 180))
+            screen.blit(sub, (WIDTH // 2 - sub.get_width() // 2, HEIGHT // 2 + 40))
 
         pygame.display.flip()
 
