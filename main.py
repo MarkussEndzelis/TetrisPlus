@@ -153,22 +153,33 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if not game_over and event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT and valid(board, piece, ox=-1):
-                    piece['x'] -= 1
-                if event.key == pygame.K_RIGHT and valid(board, piece, ox=1):
-                    piece['x'] += 1
-                if event.key == pygame.K_UP:
-                    rotated = rotate(piece['shape'])
-                    if valid(board, {'shape': rotated, 'x': piece['x'], 'y': piece['y']}):
-                        piece['shape'] = rotated
-                if event.key == pygame.K_DOWN and valid(board, piece, oy=1):
-                    piece['y'] += 1
-                if event.key == pygame.K_SPACE:
-                    while valid(board, piece, oy=1):
+            if event.type == pygame.KEYDOWN:
+                if game_over:
+                    if event.key == pygame.K_r:
+                        board = [[None] * COLS for _ in range(ROWS)]
+                        piece = new_piece()
+                        next_piece = new_piece()
+                        score = 0
+                        level = 1
+                        lines_total = 0
+                        fall_time = 0
+                        fall_speed = 500
+                        game_over = False
+                else:
+
+                    if event.key == pygame.K_LEFT and valid(board, piece, ox=-1):
+                        piece['x'] -= 1
+                    if event.key == pygame.K_RIGHT and valid(board, piece, ox=1):
+                        piece['x'] += 1
+                    if event.key == pygame.K_UP:
+                        rotated = rotate(piece['shape'])
+                        if valid(board, {'shape': rotated, 'x': piece['x'], 'y': piece['y']}):
+                            piece['shape'] = rotated
+                    if event.key == pygame.K_DOWN and valid(board, piece, oy=1):
                         piece['y'] += 1
-                if event.key == pygame.K_r and game_over:
-                    main()
+                    if event.key == pygame.K_SPACE:
+                        while valid(board, piece, oy=1):
+                            piece['y'] += 1
         
         if not game_over and fall_time > fall_speed:
             fall_time = 0
