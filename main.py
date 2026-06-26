@@ -135,18 +135,21 @@ def draw_next(piece):
                 pygame.draw.rect(screen, piece['color'],
                                  (370 + x * BLOCK, 60 + y * BLOCK, BLOCK - 1, BLOCK - 1))
                 
-def draw_ui(score, level, lines):
-    screen.blit(font.render(f"SCORE", True, WHITE), (370, 220))
-    screen.blit(font_big.render(str(score), True, WHITE), (370, 240))
+def draw_ui(score, level, lines, combo=0):
+    screen.blit(font.render(f"SCORE", True, WHITE), (370, 250))
+    screen.blit(font_big.render(str(score), True, WHITE), (370, 270))
     screen.blit(font.render(f"LEVEL", True, WHITE), (370, 300))
     screen.blit(font_big.render(str(level), True, WHITE), (370, 320))
     screen.blit(font.render(f"LINES", True, WHITE), (370, 370))
     screen.blit(font_big.render(str(lines), True, WHITE), (370, 390))
-    screen.blit(font.render("← → move", True, (180, 180, 180)), (370, 450))
-    screen.blit(font.render("↑ rotate", True, (180, 180, 180)), (370, 472))
-    screen.blit(font.render("↓ soft drop", True, (180, 180, 180)), (370, 494))
-    screen.blit(font.render("SPACE hard drop", True, (180, 180, 180)), (370, 516))
-    screen.blit(font.render("C - hold", True, (180, 180, 180)), (370, 538))
+    screen.blit(font.render("← → move", True, (180, 180, 180)), (370, 510))
+    screen.blit(font.render("↑ rotate", True, (180, 180, 180)), (370, 532))
+    screen.blit(font.render("↓ soft drop", True, (180, 180, 180)), (370, 554))
+    screen.blit(font.render("SPACE hard drop", True, (180, 180, 180)), (370, 576))
+    screen.blit(font.render("C - hold", True, (180, 180, 180)), (370, 598))
+    screen.blit(font.render("COMBO", True, WHITE), (370, 420))
+    combo_color = (255, 180, 0) if combo > 1 else (180, 180, 180)
+    screen.blit(font_big.render(f"x{combo}", True, combo_color), (370, 440))
 
 def draw_mode_ui(mode, lines_total, elapsed, blitz_time):
     if mode == 'sprint':
@@ -168,8 +171,8 @@ def draw_special_hint(piece):
         name, desc, color = hints[piece['type']]
         label = font.render(f"SPECIAL: {name}", True, color)
         sub = font.render(desc, True, (180, 180, 180))
-        screen.blit(label, (370, 550))
-        screen.blit(sub, (370, 575))
+        screen.blit(label, (370, 130))
+        screen.blit(sub, (370, 152))
 
 def explode_bomb(board, px, py):
     for dy in range(-1, 2):
@@ -199,13 +202,13 @@ def activate_special(board, piece):
 
 def draw_hold(piece):
     label = font.render("HOLD", True, WHITE)
-    screen.blit(label, (370, 150))
+    screen.blit(label, (370, 175))
     if piece:
         for y, row in enumerate(piece['shape']):
             for x, cell in enumerate(row):
                 if cell:
                     pygame.draw.rect(screen, piece['color'],
-                                     (370 + x * BLOCK, 175 + y * BLOCK, BLOCK - 1, BLOCK - 1))
+                                     (370 + x * BLOCK, 200 + y * BLOCK, BLOCK - 1, BLOCK - 1))
 
 
 def mode_select():
@@ -257,6 +260,7 @@ def main(mode='endless'):
 
     running = True
     game_over = False
+    combo = 0
     sprint_done = False
     blitz_time = 120000
     elapsed = 0
@@ -330,10 +334,14 @@ def main(mode='endless'):
                     activate_special(board, piece)
                 cleared = clear_lines(board)
                 lines_total += cleared
+                if cleared > 0:
+                    combo += 1
+                else:
+                    combo = 0
                 if mode == 'sprint' and lines_total >= 40:
                     game_over = True
                     sprint_done = True
-                score += [0, 100, 300, 500, 800][cleared] * level
+                score += [0, 100, 300, 500, 800][cleared] * level * max(1, combo)
                 level = lines_total // 10 + 1
                 fall_speed = max(100, 500 - (level - 1) * 40)
                 piece = next_piece
@@ -347,7 +355,7 @@ def main(mode='endless'):
         draw_piece(piece)
         draw_next(next_piece)
         draw_special_hint(next_piece)
-        draw_ui(score, level, lines_total)
+        draw_ui(score, level, lines_total, combo)
         draw_mode_ui(mode, lines_total, elapsed, blitz_time)
         draw_hold(held_piece)
 
