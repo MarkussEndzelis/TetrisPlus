@@ -186,6 +186,16 @@ def activate_special(board, piece):
     elif t == 'crystal':
         explode_crystal(board, py)
 
+def draw_hold(piece):
+    label = font.render("HOLD", True, WHITE)
+    screen.blit(label, (370, 420))
+    if piece:
+        for y, row in enumerate(piece['shape']):
+            for x, cell in enumerate(row):
+                if cell:
+                    pygame.draw.rect(screen, piece['color'],
+                                     (370 + x * BLOCK, 450 + y * BLOCK, BLOCK - 1, BLOCK - 1))
+
 def main():
     board = [[None] * COLS for _ in range(ROWS)]
     piece = new_piece()
@@ -198,6 +208,8 @@ def main():
 
     running = True
     game_over = False
+    held_piece = None
+    can_hold = True
 
     while running:
         screen.fill(DARK)
@@ -235,6 +247,19 @@ def main():
                     if event.key == pygame.K_SPACE:
                         while valid(board, piece, oy=1):
                             piece['y'] += 1
+                    if event.key == pygame.K_c and can_hold:
+                        if held_piece is None:
+                            held_piece = new_piece()
+                            held_piece['shape'] = piece['shape']
+                            held_piece['color'] = piece['color']
+                            held_piece['type'] = piece['type']
+                            piece = next_piece
+                            next_piece = new_piece()
+                        else:
+                            piece, held_piece = held_piece, piece
+                            piece['x'] = COLS // 2 - len(piece['shape'][0]) // 2
+                            piece['y'] = 0
+                        can_hold = False
         
         if not game_over and fall_time > fall_speed:
             fall_time = 0
@@ -251,6 +276,7 @@ def main():
                 level = lines_total // 10 + 1
                 fall_speed = max(100, 500 - (level - 1) * 40)
                 piece = next_piece
+                can_hold = True
                 next_piece = new_piece()
                 if not valid(board, piece):
                     game_over = True
@@ -261,6 +287,7 @@ def main():
         draw_next(next_piece)
         draw_special_hint(next_piece)
         draw_ui(score, level, lines_total)
+        draw_hold(held_piece)
 
         if game_over:
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
