@@ -4,6 +4,23 @@ import sys
 
 pygame.init()
 
+def make_sound(freq, duration, volume=0.3):
+    import numpy as np
+    sample_rate = 44100
+    frames = int(sample_rate * duration)
+    t = np.linspace(0, duration, frames, False)
+    wave = np.sin(2 * np.pi * freq * t)
+    fade = np.linspace(1, 0, frames)
+    wave = wave * fade * volume * 32767
+    arr = np.column_stack((wave, wave)).astype('int16')
+    return pygame.sndarray.make_sound(arr)
+
+pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+snd_clear = make_sound(660, 0.15, 0.2)
+snd_drop = make_sound(180, 0.08, 0.15)
+snd_gameover = make_sound(150, 0.6, 0.25)
+snd_hold = make_sound(520, 0.1, 0.15)
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GRAY = (40, 40, 40)
@@ -316,9 +333,11 @@ def main(mode='endless', high_scores=None):
                     if event.key == pygame.K_DOWN and valid(board, piece, oy=1):
                         piece['y'] += 1
                     if event.key == pygame.K_SPACE:
+                        snd_drop.play()
                         while valid(board, piece, oy=1):
                             piece['y'] += 1
                     if event.key == pygame.K_c and can_hold:
+                        snd_hold.play()
                         if held_piece is None:
                             held_piece = new_piece()
                             held_piece['shape'] = piece['shape']
@@ -342,6 +361,8 @@ def main(mode='endless', high_scores=None):
                 else:
                     activate_special(board, piece)
                 cleared = clear_lines(board)
+                if cleared > 0:
+                    snd_clear.play()
                 lines_total += cleared
                 if cleared > 0:
                     combo += 1
@@ -358,6 +379,7 @@ def main(mode='endless', high_scores=None):
                 next_piece = new_piece()
                 if not valid(board, piece):
                     game_over = True
+                    snd_gameover.play()
 
         draw_board(board)
         draw_ghost(board, piece)
