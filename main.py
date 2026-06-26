@@ -142,10 +142,20 @@ def draw_ui(score, level, lines):
     screen.blit(font_big.render(str(level), True, WHITE), (370, 280))
     screen.blit(font.render(f"LINES", True, WHITE), (370, 340))
     screen.blit(font_big.render(str(lines), True, WHITE), (370, 360))
-    screen.blit(font.render("← → move", True, GRAY), (370, 430))
-    screen.blit(font.render("↑ rotate", True, GRAY), (370, 455))
-    screen.blit(font.render("↓ soft drop", True, GRAY), (370, 480))
-    screen.blit(font.render("SPACE hard drop", True, GRAY), (370, 505))
+    screen.blit(font.render("← → move", True, (180, 180, 180)), (370, 430))
+    screen.blit(font.render("↑ rotate", True, (180, 180, 180)), (370, 455))
+    screen.blit(font.render("↓ soft drop", True, (180, 180, 180)), (370, 480))
+    screen.blit(font.render("SPACE hard drop", True, (180, 180, 180)), (370, 505))
+
+def draw_mode_ui(mode, lines_total, elapsed, blitz_time):
+    if mode == 'sprint':
+        remaining = f"Lines left: {max(0, 40 - lines_total)}"
+        screen.blit(font.render(remaining, True, (0, 240, 0)), (370, 600))
+    elif mode == 'blitz':
+        secs = max(0, (blitz_time - elapsed) // 1000)
+        timer = f"Time: {secs}s"
+        color = (240, 60, 60) if secs <= 10 else (240, 160, 0)
+        screen.blit(font.render(timer, True, color), (370, 600))
 
 def draw_special_hint(piece):
     if piece['type'] != 'normal':
@@ -156,7 +166,7 @@ def draw_special_hint(piece):
         }
         name, desc, color = hints[piece['type']]
         label = font.render(f"SPECIAL: {name}", True, color)
-        sub = font.render(desc, True, GRAY)
+        sub = font.render(desc, True, (180, 180, 180))
         screen.blit(label, (370, 550))
         screen.blit(sub, (370, 575))
 
@@ -196,7 +206,45 @@ def draw_hold(piece):
                     pygame.draw.rect(screen, piece['color'],
                                      (370 + x * BLOCK, 450 + y * BLOCK, BLOCK - 1, BLOCK - 1))
 
-def main():
+
+def mode_select():
+    selected = None
+    while selected is None:
+        screen.fill(DARK)
+        title = font_big.render("TETRIS+", True, (0, 240, 240))
+        screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 80))
+
+        modes = [
+            ("ENDLESS", "classic tetris, no limit", (0, 240, 240)),
+            ("SPRINT", "clear 40 lines, fastest time", (0, 240, 0)),
+            ("BLITZ", "2 minutes, max score", (240, 160, 0)),
+        ]
+
+        for i, (name, desc, color) in enumerate(modes):
+            y = 200 + i * 120
+            pygame.draw.rect(screen, (30, 30, 50), (150, y, 400, 80), border_radius=10)
+            pygame.draw.rect(screen, color, (150, y, 400, 80), 2, border_radius=10)
+            label = font_big.render(name, True, color)
+            screen.blit(label, (170, y + 10))
+            sub = font.render(desc, True, (180, 180, 180))
+            screen.blit(sub, (170, y + 48))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = pygame.mouse.get_pos()
+                for i, (name, _, _) in enumerate(modes):
+                    y = 200 + i * 120
+                    if 150 <= mx <= 550 and y <= my <= y + 80:
+                        selected = name.lower()
+        
+        pygame.display.flip()
+        clock.tick(60)
+    return selected
+
+def main(mode='endless'):
     board = [[None] * COLS for _ in range(ROWS)]
     piece = new_piece()
     next_piece = new_piece()
@@ -208,6 +256,9 @@ def main():
 
     running = True
     game_over = False
+    sprint_done = False
+    blitz_time = 120000
+    elapsed = 0
     held_piece = None
     can_hold = True
 
@@ -215,6 +266,10 @@ def main():
         screen.fill(DARK)
         dt = clock.tick(60)
         fall_time += dt
+        if mode == 'blitz':
+            elapsed += dt
+            if elapsed >= blitz_time:
+                game_over = True
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -232,6 +287,8 @@ def main():
                         fall_time = 0
                         fall_speed = 500
                         game_over = False
+                    if event.key == pygame.K_m:
+                        return
                 else:
 
                     if event.key == pygame.K_LEFT and valid(board, piece, ox=-1):
@@ -272,6 +329,9 @@ def main():
                     activate_special(board, piece)
                 cleared = clear_lines(board)
                 lines_total += cleared
+                if mode == 'sprint' and lines_total >= 40:
+                    game_over = True
+                    sprint_done = True
                 score += [0, 100, 300, 500, 800][cleared] * level
                 level = lines_total // 10 + 1
                 fall_speed = max(100, 500 - (level - 1) * 40)
@@ -287,6 +347,7 @@ def main():
         draw_next(next_piece)
         draw_special_hint(next_piece)
         draw_ui(score, level, lines_total)
+        draw_mode_ui(mode, lines_total, elapsed, blitz_time)
         draw_hold(held_piece)
 
         if game_over:
@@ -302,9 +363,11 @@ def main():
             score_text = font.render(f"Score: {score} | Lines: {lines_total} | Level: {level}", True, WHITE)
             screen.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 2))
 
-            sub = font.render("Press R to restart", True, (180, 180, 180))
+            sub = font.render("Press R to restart  M - main menu", True, (180, 180, 180))
             screen.blit(sub, (WIDTH // 2 - sub.get_width() // 2, HEIGHT // 2 + 40))
 
         pygame.display.flip()
 
-main()
+while True:
+    mode = mode_select()
+    main(mode)
