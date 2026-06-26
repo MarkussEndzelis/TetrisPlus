@@ -146,7 +146,7 @@ def draw_ui(score, level, lines, combo=0):
     screen.blit(font.render("↑ rotate", True, (180, 180, 180)), (370, 532))
     screen.blit(font.render("↓ soft drop", True, (180, 180, 180)), (370, 554))
     screen.blit(font.render("SPACE hard drop", True, (180, 180, 180)), (370, 576))
-    screen.blit(font.render("C - hold", True, (180, 180, 180)), (370, 598))
+    screen.blit(font.render("C - hold", True, (180, 180, 180)), (370, 596))
     screen.blit(font.render("COMBO", True, WHITE), (370, 420))
     combo_color = (255, 180, 0) if combo > 1 else (180, 180, 180)
     screen.blit(font_big.render(f"x{combo}", True, combo_color), (370, 440))
@@ -154,12 +154,12 @@ def draw_ui(score, level, lines, combo=0):
 def draw_mode_ui(mode, lines_total, elapsed, blitz_time):
     if mode == 'sprint':
         remaining = f"Lines left: {max(0, 40 - lines_total)}"
-        screen.blit(font.render(remaining, True, (0, 240, 0)), (370, 600))
+        screen.blit(font.render(remaining, True, (0, 240, 0)), (370, 618))
     elif mode == 'blitz':
         secs = max(0, (blitz_time - elapsed) // 1000)
         timer = f"Time: {secs}s"
         color = (240, 60, 60) if secs <= 10 else (240, 160, 0)
-        screen.blit(font.render(timer, True, color), (370, 600))
+        screen.blit(font.render(timer, True, color), (370, 618))
 
 def draw_special_hint(piece):
     if piece['type'] != 'normal':
